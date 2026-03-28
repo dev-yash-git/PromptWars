@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Copy, ExternalLink, MessageCircle, ThumbsUp } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, ExternalLink, MessageCircle, ThumbsUp, Check } from 'lucide-react';
 import { upvoteIssue, addComment } from '../services/api';
 
 const IssueCard = ({ issue, onUpdate }) => {
     const [newComment, setNewComment] = useState('');
+    const [copied, setCopied] = useState(false);
     const { ai_data, status, upvotes, id, priorityScore, confidenceScore, verification_status } = issue;
 
     const handleUpvote = async () => {
@@ -26,9 +27,22 @@ const IssueCard = ({ issue, onUpdate }) => {
         }
     };
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(ai_data.complaint_draft);
-        alert("Complaint draft copied to clipboard!");
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(ai_data.complaint_draft);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Fallback for browsers without clipboard API
+            const el = document.createElement('textarea');
+            el.value = ai_data.complaint_draft;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     const getSeverityClass = (sev) => {
@@ -88,7 +102,14 @@ const IssueCard = ({ issue, onUpdate }) => {
                 <div className="glass bg-white/5 p-6 rounded-xl space-y-4 border-white/5">
                     <h4 className="text-sm font-bold text-white flex items-center justify-between">
                          Complaint Draft
-                         <button onClick={copyToClipboard} className="btn icon-btn p-1.5" title="Copy Text"><Copy className="w-4 h-4" /></button>
+                         <button
+                             onClick={copyToClipboard}
+                             className="btn icon-btn p-1.5"
+                             title={copied ? 'Copied!' : 'Copy complaint draft'}
+                             aria-label={copied ? 'Copied to clipboard' : 'Copy complaint draft to clipboard'}
+                         >
+                             {copied ? <Check className="w-4 h-4 text-green-400" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
+                         </button>
                     </h4>
                     <pre className="text-xs bg-black/30 p-4 rounded-lg text-slate-400 font-sans whitespace-pre-wrap max-h-40 overflow-y-auto">
                         {ai_data.complaint_draft}
@@ -106,9 +127,13 @@ const IssueCard = ({ issue, onUpdate }) => {
 
             <footer className="pt-4 border-t border-white/10 flex flex-col gap-4">
                 <div className="flex items-center gap-6">
-                    <button onClick={handleUpvote} className="flex items-center gap-2 text-slate-400 hover:text-accent transition-colors text-sm font-bold">
-                        <ThumbsUp className="w-4 h-4" /> {upvotes} Upvotes
-                    </button>
+                <button
+                    onClick={handleUpvote}
+                    className="flex items-center gap-2 text-slate-400 hover:text-accent transition-colors text-sm font-bold"
+                    aria-label={`Upvote this issue. Current count: ${upvotes}`}
+                >
+                    <ThumbsUp className="w-4 h-4" aria-hidden="true" /> {upvotes} Upvotes
+                </button>
                     <div className="flex items-center gap-2 text-slate-400 text-sm font-bold">
                         <MessageCircle className="w-4 h-4" /> {issue.comments?.length || 0} Comments
                     </div>

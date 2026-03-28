@@ -7,6 +7,7 @@ const IssueInput = ({ onAnalyze, isLoading }) => {
     const [description, setDescription] = useState('');
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [inputError, setInputError] = useState('');
     const { isListening, transcript, startListening, stopListening } = useSpeechToText();
     const { location, error: geoError } = useGeolocation();
 
@@ -26,10 +27,10 @@ const IssueInput = ({ onAnalyze, isLoading }) => {
 
     const handleSubmit = () => {
         if (!description.trim()) {
-            alert("Please provide a description of the issue.");
+            setInputError('Please provide a description of the issue.');
             return;
         }
-        
+        setInputError('');
         const formData = new FormData();
         formData.append('description', description);
         if (image) formData.append('image', image);
@@ -46,12 +47,17 @@ const IssueInput = ({ onAnalyze, isLoading }) => {
             </h2>
             
             <textarea
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-4 text-white focus:outline-none focus:ring-2 focus:ring-accent mb-4"
+                id="issue-description"
+                className={`w-full bg-slate-900 border rounded-lg p-4 text-white focus:outline-none focus:ring-2 focus:ring-accent mb-1 ${inputError ? 'border-red-500' : 'border-slate-700'}`}
                 rows="4"
                 placeholder="Describe what's wrong (e.g., street light flickering, illegal dumping...)"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { setDescription(e.target.value); if (inputError) setInputError(''); }}
+                aria-label="Civic issue description"
+                aria-describedby="issue-error"
+                aria-required="true"
             />
+            {inputError && <p id="issue-error" className="text-xs text-red-400 mb-3" role="alert">{inputError}</p>}
 
             {imagePreview && (
                 <div className="relative w-32 h-32 mb-4 group">
@@ -70,9 +76,11 @@ const IssueInput = ({ onAnalyze, isLoading }) => {
                     <button 
                         onClick={isListening ? stopListening : startListening}
                         className={`btn icon-btn ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : ''}`}
+                        aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                        aria-pressed={isListening}
                         title="Voice Input"
                     >
-                        <Mic className="w-5 h-5" />
+                        <Mic className="w-5 h-5" aria-hidden="true" />
                         {isListening ? 'Listening...' : 'Voice'}
                     </button>
                     
@@ -92,8 +100,10 @@ const IssueInput = ({ onAnalyze, isLoading }) => {
                     onClick={handleSubmit} 
                     disabled={isLoading}
                     className="btn primary-btn min-w-[150px]"
+                    aria-label={isLoading ? 'Analyzing your civic issue' : 'Analyze civic issue'}
+                    aria-busy={isLoading}
                 >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <Send className="w-5 h-5" aria-hidden="true" />}
                     {isLoading ? 'Analyzing...' : 'Analyze Issue'}
                 </button>
             </div>
