@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-const api = axios.create({
-    baseURL: 'http://127.0.0.1:5002/api'
-});
+const baseURL = import.meta.env.DEV
+    ? 'http://127.0.0.1:5002/api'
+    : '/api';
+
+const api = axios.create({ baseURL });
 
 export const analyzeIssue = async (formData) => {
     const response = await api.post('/analyze-issue', formData, {
